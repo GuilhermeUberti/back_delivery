@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000"]
+    COOKIE_SECURE: bool = False  # True em produção (Railway): SameSite=None; Secure
 
     ZAPI_INSTANCE: str = ""
     ZAPI_TOKEN: str = ""

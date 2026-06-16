@@ -11,10 +11,11 @@ from app.config import settings
 
 router = APIRouter()
 
+_SECURE = settings.COOKIE_SECURE  # True em produção (Railway): define SameSite=None; Secure
 _COOKIE_OPTS = {
     "httponly": True,
-    "samesite": "lax",
-    "secure": not settings.EFI_SANDBOX,  # secure=True em produção
+    "samesite": "none" if _SECURE else "lax",
+    "secure": _SECURE,
 }
 
 
@@ -103,8 +104,8 @@ async def refresh(
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie("access_token")
-    response.delete_cookie("refresh_token")
+    response.delete_cookie("access_token", **_COOKIE_OPTS)
+    response.delete_cookie("refresh_token", **_COOKIE_OPTS)
     return {"detail": "Logout realizado com sucesso"}
 
 

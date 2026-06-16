@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import Cookie, Depends, HTTPException, status
+from fastapi import Cookie, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -9,6 +9,7 @@ from app.auth import service
 
 
 async def get_current_user(
+    request: Request,
     access_token: str | None = Cookie(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> User:
@@ -16,6 +17,10 @@ async def get_current_user(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Sessão inválida ou expirada",
     )
+
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        access_token = auth_header[7:]
 
     if not access_token:
         raise credentials_error
