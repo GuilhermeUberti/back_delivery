@@ -20,6 +20,8 @@ def _headers() -> dict:
 
 
 async def create_preference(order_id: str, total: Decimal) -> dict:
+    if not settings.MP_ACCESS_TOKEN:
+        raise RuntimeError("MP_ACCESS_TOKEN não configurado")
     """
     Cria preferência de pagamento no Mercado Pago.
 

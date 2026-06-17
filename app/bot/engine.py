@@ -71,6 +71,20 @@ async def process_message(zapi_instance_id: str, whatsapp: str, text: str, db: A
         state.cart = []
         state.data = {}
 
+    # Global cancel command — works at any step except greeting
+    _CANCEL_KEYWORDS = {"cancelar", "cancel", "sair", "reiniciar", "restart", "#"}
+    if state.step not in ("greeting",) and text.strip().lower() in _CANCEL_KEYWORDS:
+        state.step = "greeting"
+        state.cart = []
+        state.data = {}
+        await db.commit()
+        zapi = ZAPIClient(restaurant.zapi_instance, restaurant.zapi_token)
+        await zapi.send_text(
+            whatsapp,
+            "Pedido cancelado. 👋\n\nQuando quiser fazer um novo pedido, é só mandar uma mensagem!",
+        )
+        return
+
     handler = _HANDLERS.get(state.step, greeting.handle)
 
     try:

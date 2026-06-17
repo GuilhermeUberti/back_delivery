@@ -11,7 +11,7 @@ from app.menu.models import Category
 class FlowResult:
     next_step: str
     messages: list[str]
-    cart: list[dict] = field(default_factory=list)
+    cart: list[dict] | None = None  # None = preserve existing cart; [] = intentional reset
     data: dict = field(default_factory=dict)
 
 
