@@ -97,39 +97,31 @@ async def handle(state, text: str, restaurant: Restaurant, db: AsyncSession) -> 
 async def _handle_pix(
     restaurant: Restaurant, data: dict, order: Order, customer_name: str
 ) -> FlowResult:
-    from app.payments.efi import create_charge
+    from app.payments.openpix import create_charge
     from app.orders.models import Order as OrderModel
     from app.database import AsyncSessionLocal
-
-    if not restaurant.pix_key:
-        return FlowResult(
-            next_step="payment",
-            messages=["❌ Este restaurante ainda não configurou a chave Pix. Entre em contato diretamente."],
-            data=data,
-        )
 
     try:
         charge = await create_charge(
             amount=order.total,
-            pix_key=restaurant.pix_key,
             order_id=str(order.id),
             customer_name=customer_name,
             expiration_seconds=600,
         )
     except Exception as exc:
-        logger.exception("Efí Bank create_charge failed for order %s: %s", order.id, exc)
+        logger.exception("OpenPix create_charge failed for order %s: %s", order.id, exc)
         return FlowResult(
             next_step="payment",
             messages=["❌ Erro ao gerar cobrança Pix. Tente novamente ou escolha outra forma de pagamento."],
             data=data,
         )
 
-    # Persist payment_ref (txid)
+    # Persist payment_ref (correlationID)
     async with AsyncSessionLocal() as db2:
         result = await db2.execute(select(OrderModel).where(OrderModel.id == order.id))
         persisted = result.scalar_one_or_none()
         if persisted:
-            persisted.payment_ref = charge["txid"]
+            persisted.payment_ref = charge["correlation_id"]
             await db2.commit()
 
     messages = []

@@ -28,6 +28,8 @@ class ZAPIClient:
                     json={"phone": phone, "message": message},
                 )
                 resp.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                logger.error("Z-API send_text failed for %s: %s | body: %s", phone, exc, exc.response.text)
             except Exception as exc:
                 logger.error("Z-API send_text failed for %s: %s", phone, exc)
 

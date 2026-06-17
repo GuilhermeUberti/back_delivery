@@ -20,11 +20,8 @@ class Settings(BaseSettings):
     ZAPI_INSTANCE: str = ""
     ZAPI_TOKEN: str = ""
 
-    EFI_CLIENT_ID: str = ""
-    EFI_CLIENT_SECRET: str = ""
-    EFI_SANDBOX: bool = True
-    EFI_CERT_PATH: str = ""  # path to .pem certificate (mTLS obrigatório em produção)
-    EFI_KEY_PATH: str = ""   # path to .pem private key
+    OPENPIX_APP_ID: str = ""
+    OPENPIX_WEBHOOK_TOKEN: str = ""  # token configurado no painel OpenPix → Webhooks
 
     MP_ACCESS_TOKEN: str = ""
     MP_NOTIFICATION_URL: str = ""  # URL pública para receber webhooks do Mercado Pago

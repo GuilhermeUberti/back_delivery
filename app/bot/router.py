@@ -53,38 +53,46 @@ async def whatsapp_webhook(request: Request, db: AsyncSession = Depends(get_db))
     return {"status": "ok"}
 
 
-# ---------- Pix (Efí Bank) ----------
+# ---------- Pix (OpenPix) ----------
 
 @router.post("/payment/pix")
 async def pix_webhook(request: Request, db: AsyncSession = Depends(get_db)):
     """
-    Webhook de confirmação de pagamento Pix da Efí Bank.
-    Payload: {"pix": [{"txid": "...", "status": "CONCLUIDA", ...}]}
+    Webhook de confirmação de pagamento Pix da OpenPix.
+    Payload: {"event": "OPENPIX:CHARGE_COMPLETED", "charge": {"correlationID": "...", ...}}
     """
+    from app.config import settings as cfg
+
+    # Valida token de webhook configurado no painel OpenPix
+    webhook_token = request.headers.get("x-webhook-token", "")
+    if cfg.OPENPIX_WEBHOOK_TOKEN and webhook_token != cfg.OPENPIX_WEBHOOK_TOKEN:
+        logger.warning("OpenPix webhook: invalid token")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook token")
+
     try:
         payload = await request.json()
     except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid JSON")
 
-    pix_events = payload.get("pix", [])
-    for event in pix_events:
-        if event.get("status") != "CONCLUIDA":
-            continue
+    event = payload.get("event", "")
+    if "CHARGE_COMPLETED" not in event:
+        return {"status": "ignored"}
 
-        txid = event.get("txid", "")
-        if not txid:
-            continue
+    charge = payload.get("charge") or {}
+    correlation_id = charge.get("correlationID", "")
+    if not correlation_id:
+        return {"status": "ignored"}
 
-        result = await db.execute(
-            select(Order).where(
-                and_(Order.payment_ref == txid, Order.payment_status == "awaiting")
-            )
+    result = await db.execute(
+        select(Order).where(
+            and_(Order.payment_ref == correlation_id, Order.payment_status == "awaiting")
         )
-        order = result.scalar_one_or_none()
-        if order:
-            await engine.confirm_payment(order.id, db)
-        else:
-            logger.warning("Pix webhook: order not found for txid=%s", txid)
+    )
+    order = result.scalar_one_or_none()
+    if order:
+        await engine.confirm_payment(order.id, db)
+    else:
+        logger.warning("OpenPix webhook: order not found for correlationID=%s", correlation_id)
 
     return {"status": "ok"}
 
