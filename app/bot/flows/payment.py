@@ -25,6 +25,30 @@ async def handle(state, text: str, restaurant: Restaurant, db: AsyncSession) -> 
 
     method = "pix" if text_lower in ("1", "pix") else "credit_card"
 
+    # Reuse existing order if a previous attempt failed — avoids duplicate orders on retry
+    existing_order_id = state.data.get("order_id")
+    if existing_order_id:
+        try:
+            oid = uuid.UUID(existing_order_id)
+            result = await db.execute(select(Order).where(Order.id == oid))
+            order = result.scalar_one_or_none()
+            if order and order.payment_status == "awaiting":
+                order.payment_method = method
+                await db.commit()
+                new_data = {**state.data, "payment_method": method}
+                customer = await get_or_create_customer(
+                    restaurant_id=restaurant.id,
+                    whatsapp=state.whatsapp,
+                    db=db,
+                    address=state.data.get("address"),
+                )
+                if method == "pix":
+                    return await _handle_pix(restaurant, new_data, order, customer.name or "Cliente")
+                else:
+                    return await _handle_card(new_data, order)
+        except (ValueError, Exception):
+            pass
+
     customer = await get_or_create_customer(
         restaurant_id=restaurant.id,
         whatsapp=state.whatsapp,
