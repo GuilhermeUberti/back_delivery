@@ -33,7 +33,8 @@ async def handle(state, text: str, restaurant: Restaurant, db: AsyncSession) -> 
     welcome = (
         f"Olá! Bem-vindo ao *{restaurant.name}*! 👋\n\n"
         f"Escolha uma categoria:\n{cat_list}\n\n"
-        f"Responda com o *número* da categoria desejada."
+        f"Responda com o *número* da categoria desejada.\n\n"
+        f"_A qualquer momento, digite *#* para cancelar e recomeçar o pedido._"
     )
 
     return FlowResult(
