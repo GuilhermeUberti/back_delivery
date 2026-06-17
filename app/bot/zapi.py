@@ -26,6 +26,7 @@ class ZAPIClient:
                 resp = await client.post(
                     f"{self._base}/send-text",
                     json={"phone": phone, "message": message},
+                    headers={"Client-Token": settings.ZAPI_CLIENT_TOKEN},
                 )
                 resp.raise_for_status()
             except httpx.HTTPStatusError as exc:
@@ -40,6 +41,7 @@ class ZAPIClient:
                 resp = await client.post(
                     f"{self._base}/send-image",
                     json={"phone": phone, "image": image_url, "caption": caption},
+                    headers={"Client-Token": settings.ZAPI_CLIENT_TOKEN},
                 )
                 resp.raise_for_status()
             except Exception as exc:

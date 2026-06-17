@@ -19,6 +19,7 @@ class Settings(BaseSettings):
 
     ZAPI_INSTANCE: str = ""
     ZAPI_TOKEN: str = ""
+    ZAPI_CLIENT_TOKEN: str = ""
 
     OPENPIX_APP_ID: str = ""
     OPENPIX_WEBHOOK_TOKEN: str = ""  # token configurado no painel OpenPix → Webhooks
